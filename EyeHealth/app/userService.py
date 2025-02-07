@@ -1,0 +1,132 @@
+from fastapi import FastAPI, Depends, HTTPException
+from fastapi_users import FastAPIUsers, models, schemas
+from fastapi_users.authentication import JWTStrategy, AuthenticationBackend, BearerTransport
+from sqlalchemy import Column, Integer, String, Enum, create_engine
+from sqlalchemy.orm import sessionmaker, Session, declarative_base
+from passlib.context import CryptContext
+import datetime
+import jwt
+from pydantic import EmailStr
+import os
+
+# ================= Инициализация =================
+DATABASE_URL = "postgresql://postgres:password@localhost/userdb"
+SECRET_KEY = "MY_SECRET_KEY"
+
+engine = create_engine(DATABASE_URL)
+SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
+Base = declarative_base()
+
+pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
+
+app = FastAPI()
+
+
+# ================= Модель пользователя =================
+class RoleEnum(str, Enum):
+    ADMIN = "Admin"
+    DOCTOR = "Doctor"
+
+
+class User(models.BaseUser, models.BaseOAuthAccount):
+    id = Column(Integer, primary_key=True, index=True)
+    name = Column(String, nullable=False)
+    phone_number = Column(String, unique=True, nullable=False)
+    email = Column(String, unique=True, nullable=False)
+    role = Column(Enum(RoleEnum), nullable=False)
+    password = Column(String, nullable=False)  # Хешированный пароль
+
+
+Base.metadata.create_all(bind=engine)
+
+
+# ================= Схемы Pydantic =================
+class UserCreate(schemas.BaseUserCreate):
+    name: str
+    phone_number: str
+    role: RoleEnum
+
+
+class UserResponse(schemas.BaseUser):
+    id: int
+    name: str
+    phone_number: str
+    role: RoleEnum
+
+
+class AuthRequest(schemas.BaseLogin):
+    pass
+
+
+# ================= Репозитории и сервисы =================
+
+# FastAPI Users создаст всё для аутентификации, включая создание токенов
+class UserRepository:
+    def __init__(self, db: Session):
+        self.db = db
+
+    def save(self, user: User):
+        self.db.add(user)
+        self.db.commit()
+        self.db.refresh(user)
+        return user
+
+    def find_by_email(self, email: str):
+        return self.db.query(User).filter(User.email == email).first()
+
+
+# ================= FastAPI Users Authentication =================
+def get_jwt_strategy():
+    return JWTStrategy(secret=SECRET_KEY, lifetime_seconds=3600)
+
+
+# ================= FastAPI Users настройки =================
+auth_backend = AuthenticationBackend(
+    name="jwt",
+    transport=BearerTransport(),
+    get_strategy=get_jwt_strategy
+)
+
+# FastAPI Users экземпляр
+fastapi_users = FastAPIUsers(
+    get_user_manager=UserRepository,
+    auth_backends=[auth_backend],
+    user_model=User,
+    user_create_model=UserCreate,
+    user_update_model=UserResponse
+)
+
+
+# ================= Маршруты FastAPI =================
+@app.post("/register")
+async def register(user_data: UserCreate, db: Session = Depends(SessionLocal)):
+    repo = UserRepository(db)
+    hashed_password = pwd_context.hash(user_data.password)
+    new_user = User(
+        name=user_data.name,
+        phone_number=user_data.phone_number,
+        email=user_data.email,
+        role=user_data.role,
+        password=hashed_password
+    )
+    repo.save(new_user)
+    return {"message": "Пользователь зарегистрирован!"}
+
+
+@app.post("/auth")
+async def auth(auth_request: AuthRequest, db: Session = Depends(SessionLocal)):
+    repo = UserRepository(db)
+    user = repo.find_by_email(auth_request.email)
+    if not user or not pwd_context.verify(auth_request.password, user.password):
+        raise HTTPException(status_code=401, detail="Неверные учетные данные")
+
+    # Генерация токена вручную (если не использовать FastAPI Users для этого)
+    token = jwt.encode({"sub": user.email, "exp": datetime.datetime.utcnow() + datetime.timedelta(days=1)}, SECRET_KEY,
+                       algorithm="HS256")
+    return {"token": token}
+
+
+# Добавление маршрутов для FastAPI Users
+app.include_router(fastapi_users.get_auth_router(auth_backend), prefix="/auth", tags=["auth"])
+app.include_router(fastapi_users.get_register_router(), prefix="/auth", tags=["auth"])
+app.include_router(fastapi_users.get_users_router(), prefix="/users", tags=["users"])
