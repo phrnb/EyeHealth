@@ -91,9 +91,69 @@ class RequestRouter:
         return f"{service_url}/{endpoint}"
 
 
+# ================== Обработчики безопасности ==================
+
+class SecurityHandler:
+    def __init__(self, next_handler=None):
+        self.next_handler = next_handler
+
+    async def handle_request(self, request, user_id):
+        pass
+
+
+class AuthenticationHandler(SecurityHandler):
+    async def handle_request(self, request, user_id):
+        token = request.headers.get("Authorization")
+        if not token:
+            raise HTTPException(status_code=401, detail="Authorization required")
+
+        # Проверка аутентификации
+        try:
+            user_id = AuthService.verify_token(token)
+        except HTTPException as e:
+            raise e
+
+        if self.next_handler:
+            await self.next_handler.handle_request(request, user_id)
+
+
+class AuthorizationHandler(SecurityHandler):
+    async def handle_request(self, request, user_id):
+        # Здесь можно добавить логику авторизации, например, проверку роли
+        if user_id != "admin":
+            raise HTTPException(status_code=403, detail="User not authorized")
+
+        if self.next_handler:
+            await self.next_handler.handle_request(request, user_id)
+
+
+class CSRFProtectionHandler(SecurityHandler):
+    async def handle_request(self, request, user_id):
+        csrf_token = request.headers.get("X-CSRF-Token")
+        if not csrf_token:
+            raise HTTPException(status_code=400, detail="CSRF token missing")
+
+        # Здесь можно добавить проверку CSRF токена
+
+        if self.next_handler:
+            await self.next_handler.handle_request(request, user_id)
+
+
+class SQLInjectionProtectionHandler(SecurityHandler):
+    async def handle_request(self, request, user_id):
+        query = request.query_params.get("query")
+        if query and "DROP" in query.upper():
+            raise HTTPException(status_code=400, detail="Potential SQL Injection detected")
+
+        if self.next_handler:
+            await self.next_handler.handle_request(request, user_id)
+
+
 # ================== API Gateway ==================
+
 @app.middleware("http")
 async def api_gateway(request: Request, call_next):
+    # Получаем токен из заголовков
     token = request.headers.get("Authorization")
 
     if not token:
@@ -102,14 +162,29 @@ async def api_gateway(request: Request, call_next):
     user_id = AuthService.verify_token(token)
     RateLimiter.check_limit(user_id)
 
+    # Создаем цепочку обработчиков безопасности
+    csrf_handler = CSRFProtectionHandler()
+    sql_injection_handler = SQLInjectionProtectionHandler(csrf_handler)
+    authorization_handler = AuthorizationHandler(sql_injection_handler)
+    authentication_handler = AuthenticationHandler(authorization_handler)
+
+    # Обрабатываем запрос через цепочку
+    await authentication_handler.handle_request(request, user_id)
+
+    # Проверка на кэш
     cache_key = f"cache:{request.url}"
     cached_response = CacheService.get_cache(cache_key)
 
     if cached_response:
         return cached_response
 
+    # Передаем запрос в основной обработчик
     response = await call_next(request)
+
+    # Кэшируем ответ
     CacheService.set_cache(cache_key, str(response.body), 30)
+
+    # Логируем событие
     LoggingService.log_event(f"Request: {request.url} by {user_id}")
 
     return response
