@@ -1,74 +1,60 @@
-version: '3.8'
+version: "3.8"
 
 services:
-  postgres:
-    image: postgres:15
-    container_name: postgres
+  user_service:
+    build: ./UserService
+    image: phrnb/user-service
     restart: always
+    ports:
+      - "8000:8000"
+    networks:
+      - backend-net
     environment:
-      POSTGRES_USER: admin
-      POSTGRES_PASSWORD: password
-      POSTGRES_DB: mydatabase
+      - DATABASE_URL=postgresql://postgres:password@postgresql:5432/userdb
+      - SECRET_KEY=MY_SECRET_KEY
+    depends_on:
+      - postgresql
+    volumes:
+      - ./UserService:/app
+
+  image_processor_service:
+    build: ./ImageProcessorService
+    image: phrnb/image-processor-service
+    restart: always
+    ports:
+      - "8001:8001"
+    networks:
+      - backend-net
+    environment:
+      - DATABASE_URL=postgresql://postgres:password@postgresql:5432/eyehealth?currentSchema=img_schema
+    depends_on:
+      - postgresql
+    volumes:
+      - ./ImageProcessorService:/app
+
+  backend:
+    build: ./Backend
+    image: phrnb/backend
+    restart: always
+    depends_on:
+      - user_service
+      - image_processor_service
+    networks:
+      - backend-net
+
+  postgresql:
+    image: postgres
+    restart: always
     ports:
       - "5432:5432"
-    volumes:
-      - postgres_data:/var/lib/postgresql/data
     networks:
-      - backend
-
-  pgadmin:
-    image: dpage/pgadmin4
-    container_name: pgadmin
-    restart: always
+      - backend-net
     environment:
-      PGADMIN_DEFAULT_EMAIL: admin@example.com
-      PGADMIN_DEFAULT_PASSWORD: admin
-    ports:
-      - "5050:80"
-    depends_on:
-      - postgres
-    networks:
-      - backend
-
-  user-service:
-    build:
-      context: ./user-service
-    container_name: user-service
-    restart: always
-    environment:
-      DATABASE_URL: postgresql://admin:password@postgres:5432/mydatabase
-    depends_on:
-      - postgres
-    networks:
-      - backend
-
-  image-service:
-    build:
-      context: ./image-service
-    container_name: image-service
-    restart: always
-    depends_on:
-      - postgres
-    networks:
-      - backend
-
-  frontend:
-    build:
-      context: ./frontend
-    container_name: frontend
-    restart: always
-    ports:
-      - "3000:3000"
-    depends_on:
-      - user-service
-      - image-service
-    networks:
-      - frontend
+      POSTGRES_DB: eyehealth
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
 
 networks:
-  backend:
-  frontend:
+  backend-net:
 
-volumes:
-  postgres_data:
 
