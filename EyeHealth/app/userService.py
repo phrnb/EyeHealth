@@ -21,6 +21,22 @@ pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 
 app = FastAPI()
 
+class PasswordConfigurator:
+    password_for_hash = "ssh"
+    password_helper: PasswordHelperProtocol
+
+    def __init__(self, password_helper: Optional[PasswordHelperProtocol] = None):
+        if password_helper is None:
+            self.password_helper = PasswordHelper()
+        else:
+            self.password_helper = password_helper
+
+    def hash(self, password_for_hash: str):
+        hashed_password = self.password_helper.hash(self.password_for_hash)
+        return hashed_password
+
+password_configurator = PasswordConfigurator()
+
 
 # ================= Модель пользователя =================
 class RoleEnum(str, Enum):
