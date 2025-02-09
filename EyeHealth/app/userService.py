@@ -64,6 +64,31 @@ class AuthRequest(schemas.BaseLogin):
 class UserRepository:
     def __init__(self, db: Session):
         self.db = db
+         async def create(
+        self,
+        user_create: UserCreate,
+        safe: bool = False,
+        request: Optional[Request] = None,
+    ) -> User:
+        await self.validate_password(user_create.password, user_create)
+
+        existing_user = self.find_by_email(user_create.email)
+        if existing_user is not None:
+            raise HTTPException(status_code=400, detail="User already exists")
+
+        user_dict = (
+            user_create.create_update_dict()
+            if safe
+            else user_create.create_update_dict_superuser()
+        )
+
+        password = user_dict.pop("password")
+        user_dict["hashed_password"] = pwd_context.hash(password)
+
+        created_user = User(**user_dict)
+        self.save(created_user)
+
+        return created_user
 
     def save(self, user: User):
         self.db.add(user)
