@@ -148,6 +148,31 @@ class PredictionLogger:
     def retrieve_logs(self):
         """Получение логов предсказаний"""
         return self.database_handler.load_predictions()
+        
+        class ProxyNeuralNetworkModel:
+    """Прокси для модели нейронной сети, который загружает и обучает модель только по необходимости."""
+    
+    def __init__(self, model_saver: ModelSaver):
+        self.model_saver = model_saver
+        self._model = None  # Модель пока не загружена
+
+    def _load_model(self):
+        """Загрузка модели, если она ещё не была загружена."""
+        if self._model is None:
+            print("Загружаем модель...")
+            self._model = self.model_saver.load_model()  # Загружаем модель с диска
+        return self._model
+
+    def predict(self, input_data):
+        """Предсказание через прокси."""
+        model = self._load_model()  # Лениво загружаем модель, если это необходимо
+        inference_engine = InferenceEngine(model)
+        return inference_engine.predict(input_data)  # Выполняем предсказание через реальную модель
+    
+    def train(self, X_train, y_train, epochs=10, batch_size=32):
+        """Обучение модели через прокси."""
+        model = self._load_model()  # Лениво загружаем модель, если это необходимо
+        model.fit(X_train, y_train, epochs=epochs, batch_size=batch_size)  # Обучаем модель
 
 
 # ================= NeuralNetworkService (Основной сервис) ==================
@@ -158,19 +183,21 @@ class NeuralNetworkService:
         self.trainer = ModelTrainer(self.data_loader, self.db_handler)
         self.model_saver = ModelSaver()
         self.logger = PredictionLogger(self.db_handler)
+        self.model_proxy = ProxyNeuralNetworkModel(self.model_saver)  # Используем прокси
 
     def train_model(self):
-        """Запуск процесса обучения"""
-        self.trainer.train()
-        self.model_saver.save_model(self.trainer.model.model)
+        """Запуск процесса обучения через прокси"""
+        X_train = self.data_loader.load_from_database(self.db_handler, "SELECT * FROM training_data")
+        y_train = np.random.randint(0, 2, X_train.shape[0])  # Генерация случайных меток
+        self.model_proxy.train(X_train, y_train)  # Обучаем модель через прокси
+        self.model_saver.save_model(self.model_proxy._model)  # Сохраняем модель после обучения
 
     def predict(self, input_data):
-        """Инференс модели"""
-        model = self.model_saver.load_model()
-        inference_engine = InferenceEngine(model)
-        prediction = inference_engine.predict(input_data)
+        """Инференс модели через прокси"""
+        prediction = self.model_proxy.predict(input_data)  # Используем прокси для предсказания
         self.logger.log_prediction(input_data, prediction)
         return prediction
+
 
 
 # ================= Тестирование ==================
