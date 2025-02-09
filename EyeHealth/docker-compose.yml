@@ -6,7 +6,7 @@ services:
     image: phrnb/user-service
     restart: always
     ports:
-      - "8000:8000"
+      - "8080:8080"
     networks:
       - backend-net
     environment:
@@ -22,7 +22,7 @@ services:
     image: phrnb/image-processor-service
     restart: always
     ports:
-      - "8001:8001"
+      - "8081:8081"
     networks:
       - backend-net
     environment:
@@ -32,15 +32,17 @@ services:
     volumes:
       - ./ImageProcessorService:/app
 
-  backend:
-    build: ./Backend
-    image: phrnb/backend
+  frontend:
+    build: ./Frontend
+    image: phrnb/frontend
     restart: always
     depends_on:
       - user_service
       - image_processor_service
     networks:
-      - backend-net
+      - frontend-net
+    ports:
+      - "3000:3000"
 
   postgresql:
     image: postgres
@@ -48,13 +50,13 @@ services:
     ports:
       - "5432:5432"
     networks:
-      - backend-net
+      - frontend-net
     environment:
       POSTGRES_DB: eyehealth
       POSTGRES_USER: postgres
       POSTGRES_PASSWORD: postgres
 
 networks:
-  backend-net:
+  postgres-net:
 
 
