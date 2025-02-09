@@ -36,6 +36,53 @@ class PasswordConfigurator:
         return hashed_password
 
 password_configurator = PasswordConfigurator()
+class UserService:
+    def __init__(self, name=None, email=None, role=None):
+        self.name = name
+        self.email = email
+        self.role = role
+
+    def get_user_info(self):
+        return {"name": self.name, "email": self.email, "role": self.role}
+
+
+class UserServiceBuilder:
+    def __init__(self):
+        self._user = {}
+
+    def set_name(self, name):
+        self._user["name"] = name
+        return self
+
+    def set_email(self, email):
+        self._user["email"] = email
+        return self
+
+    def set_role(self, role):
+        self._user["role"] = role
+        return self
+
+    def build(self):
+        return UserService(**self._user)
+
+
+class UserServiceDirector:
+    def __init__(self, builder):
+        self.builder = builder
+
+    def construct_admin(self, name, email):
+        """Метод для создания пользователя с ролью Admin"""
+        return self.builder.set_name(name).set_email(email).set_role("Admin").build()
+
+    def construct_user(self, name, email):
+        """Метод для создания обычного пользователя с ролью User"""
+        return self.builder.set_name(name).set_email(email).set_role("User").build()
+
+    def construct_guest(self, name, email):
+        """Метод для создания гостевого пользователя"""
+        return self.builder.set_name(name).set_email(email).set_role("Guest").build()
+
+
 
 
 # ================= Модель пользователя =================
