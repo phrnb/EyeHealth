@@ -1,932 +1,391 @@
-openapi: 3.0.3
-
+openapi: 3.0.2
 info:
- title: Requests for Neural Network Service
- version: 1.0.0
- description: OpenApi Specification for Service Neural Network
-
-servers:
- - url: /
-   description: Default4. Server URL
-
+  title: User Service API
+  description: Документация API для управления пользователями
+  version: 1.0.0
 paths:
-
- /images/upload/{username}:
-   post:
-     tags:
-       - Images
-     summary: Метод загрузки снимка пользователя на сервер
-     description: Метод загрузки снимка пользователя на сервер
-     operationId: upload
-     parameters:
-       - name: username
-         in: path
-         required: true
-         schema:
-           type: string
-     requestBody:
-       required: true
-       content:
-         multipart/form-data:
-           schema:
-             type: object
-             properties:
-               image:
-                 type: string
-                 format: binary
-     responses:
-       201:
-         description: Success
-         content:
-           application/json:
-             schema:
-               $ref: 'model/upload_image_response.json'
-       400:
-         description: Incorrect request format
-       404:
-         description: User not found
-       500:
-         description: Internal server error
-
- /images/check/{username}/{imageId}:
-   post:
-     tags:
-       - Images
-     summary: Метод анализа снимка
-     description: Метод анализа снимка
-     operationId: check
-     parameters:
-       - name: imageId
-         in: path
-         required: true
-         schema:
-           type: integer
-           format: int64
-       - name: username
-         in: path
-         required: true
-         schema:
-           type: string
-     responses:
-       200:
-         description: Success
-         content:
-           application/json:
-             schema:
-               $ref: 'model/check_image_response.json'
-       400:
-         description: Incorrect request format
-       429:
-         description: To many requests
-       500:
-         description: Internal server error
-
- /images/checks/{username}:
-   get:
-     tags:
-       - Images
-     summary: Метод получения результатов анализа снимков
-     description: Метод получения результата анализа снимков
-     operationId: getChecks
-     parameters:
-       - name: username
-         in: path
-         required: true
-         schema:
-           type: string
-     responses:
-       200:
-         description: Success
-         content:
-           application/json:
-             schema:
-               type : array
-               items:
-                 $ref: 'model/status_image_response.json'
-       400:
-         description: Incorrect request format
-       429:
-         description: To many requests
-       500:
-         description: Internal server error
-
- /images/get/{username}:
-   get:
-     tags:
-       - Images
-     summary: Метод получения cнимка пользователя
-     description: Метод получения снимка пользователя
-     operationId: get
-     parameters:
-       - name: username
-         in: path
-         required: true
-         schema:
-           type: string
-     responses:
-       200:
-         description: Success
-         content:
-           application/json:
-             schema:
-               $ref: 'model/get_images_response.json'
-       400:
-         description: Incorrect request format
-       403:
-         description: Permission denied
-       409:
-         description: Invalid items in request
-       429:
-         description: To many requests
-       500:
-         description: Internal server error
-
-
- /images/delete/{username}/{imageId}:
-   delete:
-     tags:
-       - Images
-     summary: Метод удаления снимка пользователя из системы
-     description: Метод удаления снимка пользователя из системы
-     operationId: delete
-     parameters:
-       - name: username
-         in: path
-         required: true
-         schema:
-           type: string
-       - name: imageId
-         in: path
-         required: true
-         schema:
-           type: integer
-           format: int64
-     responses:
-       200:
-         description: Success
-       400:
-         description: Incorrect request format
-       429:
-         description: To many requests
-       500:
-         description: Internal server error
-
- /images/status/{username}/{imageId}:
-   get:
-     tags:
--	Images
-     summary: Метод получения информации о текущем анализе снимка
-     description: Метод получения информации о текущем анализе снимка
-     operationId: status
-     parameters:
-       - name: username
-         in: path
-         required: true
-         schema:
-           type: string
-       - name: imageId
-         in: path
-         required: true
-         schema:
-           type: integer
-           format: int64
-     responses:
-       200:
-         description: Success
-         content:
-           application/json:
-             schema:
-               $ref: 'model/status_images_response.json'
-       400:
-         description: Incorrect request format
-       403:
-         description: Auth error
-       429:
-         description: To many requests
-       500:
-         description: Internal server error
-
-tags:
- - name: Images
-   description: "API для работы с сервисом Images"
-
-{
- "$schema": "http://json-schema.org/draft-07/schema#",
- "type": "object",
- "description": "Ответ на получение информации о пользователе в системе",
- "properties": {
-   "status": {
-     "description": "Статус анализа",
-     "type": "string",
-     "enum": [
-       "check",
-       "non_check",
-       "finish_check"
-     ]
-   },
-   "reportId": {
-     "description": "Номер отчета",
-     "type": "integer",
-     "format": "int64",
-     "example": "1234"
-   }
- },
- "required": [
-   "status",
-   "reportId"
- ]
-}
-
-{
- "$schema": "http://json-schema.org/draft-07/schema#",
- "type": "object",
- "description": "Метаданные файла",
- "properties": {
-   "imageId": {
-     "type": "integer",
-     "format": "int64",
-     "description": "Идентификатор снимка",
-     "example": "1234"
-   },
-   "imageName": {
-     "description": "Название снимка",
-     "type": "string",
-     "example": "file"
-   },
-   "imageExtension": {
-     "description": "Разрешение снимка",
-     "type": "string",
-     "example": ".pdf"
-   },
-   "size": {
-     "type": "integer",
-     "format": "int64",
-     "title": "Размер снимка",
-     "example": "123245"
-   },
-   "classCount": {
-     "type": "integer",
-     "format": "int64",
-     "description": "Количество кластеров",
-     "example": "1234"
-   },
-   "createdDate": {
-     "description": "Дата создания снимка",
-     "type": "string",
-     "format": "datetime",
-     "example": "2025.08.06:10:10:10.231312"
-   }
- },
- "required": [
-   "imageId",
-   "size",
-   "classCount",
-   "createdDate",
-   "imageExtension",
-   "imageName"
- ]
-}
-
-{
- "$schema": "http://json-schema.org/draft-07/schema#",
- "type": "object",
- "description": "Ответ на получение снимков пользователя",
- "properties": {
-   "images": {
-     "type": "array",
-     "title": "Снимки пользователя",
-     "items": {
-       "description": "Метаданные снимков",
-       "$ref": "file_metadata.json"
-     }
-   }
- },
- "required": [
-   "token"
- ]
-}
-{
- "$schema": "http://json-schema.org/draft-07/schema#",
- "type": "object",
- "description": "Ответ на получение статуса анализов снимков",
- "properties": {
-   "status": {
-     "description": "Статус анализа снимков",
-     "type": "string",
-     "enum": [
-       "check",
-       "non_check",
-       "finish_check"
-     ]
-   },
-   "reportId" : {
-     "type" : "number",
-     "format": "int64"
-   },
-   "imageId" : {
-     "type": "number",
-     "format": "int64"
-   },
-   "imageName" : {
-     "type": "string"
-   }
- },
- "required": [
-   "status"
- ]
-}
-
-{
- "$schema": "http://json-schema.org/draft-07/schema#",
- "type": "object",
- "description": "Ответ на загрузку снимка пользователя в системе",
- "properties": {
-   "username": {
-     "type": "string",
-     "title": "Имя пользователя",
-     "example": "angelina"
-   },
-   "fileMetadata": {
-     "description": "Метаданные файла",
-     "$ref": "file_metadata.json"
-   }
- },
- "required": [
-   "username",
-   "fileMetadata"
- ]
-}
-
-openapi: 3.0.3
-
+  /register:
+    post:
+      summary: Регистрация нового пользователя
+      tags:
+        - auth
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UserCreate'
+      responses:
+        '200':
+          description: Пользователь зарегистрирован
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+  /auth:
+    post:
+      summary: Аутентификация пользователя
+      tags:
+        - auth
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AuthRequest'
+      responses:
+        '200':
+          description: Успешная аутентификация
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  token:
+                    type: string
+        '401':
+          description: Неверные учетные данные
+  /users/me:
+    get:
+      summary: Получить информацию о текущем пользователе
+      tags:
+        - users
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: Информация о пользователе
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UserResponse'
+components:
+  schemas:
+    UserCreate:
+      type: object
+      properties:
+        name:
+          type: string
+        phone_number:
+          type: string
+        email:
+          type: string
+          format: email
+        role:
+          type: string
+          enum:
+            - Admin
+            - Doctor
+        password:
+          type: string
+          format: password
+      required:
+        - name
+        - phone_number
+        - email
+        - role
+        - password
+    UserResponse:
+      type: object
+      properties:
+        id:
+          type: integer
+        name:
+          type: string
+        phone_number:
+          type: string
+        email:
+          type: string
+          format: email
+        role:
+          type: string
+          enum:
+            - Admin
+            - Doctor
+    AuthRequest:
+      type: object
+      properties:
+        email:
+          type: string
+          format: email
+        password:
+          type: string
+          format: password
+      required:
+        - email
+        - password
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+openapi: 3.0.2
 info:
- title: Requests for Service Reports
- version: 1.0.0
- description: OpenApi Specification for Service Reports
-
-servers:
- - url: /
-   description: Default Server URL
-
+  title: Image Processor API
+  description: >-
+    API для обработки изображений: фильтрация, сегментация, нормализация и
+    улучшение качества
+  version: 1.0.0
 paths:
-
- /reports/get/{username}/{reportId}:
-   get:
-     tags:
-       - Reports
-     summary: Метод получения отчета пользователя
-     description: Метод получения отчета пользователя
-     operationId: get
-     parameters:
-       - name: username
-         in: path
-         required: true
-         schema:
-           type: string
-       - name: reportId
-         in: path
-         required: true
-         schema:
-           type: string
-     responses:
-       200:
-         description: Success
-         content:
-           application/json:
-             schema:
-               $ref: 'model/get_report_response.json'
-       400:
-         description: Incorrect request format
-       404:
-         description: User not found
-       500:
-         description: Internal server error
-
- /reports/get/{username}:
-   get:
-     tags:
-       - Reports
-     summary: Метод получения отчетов пользователя
-     description: Метод получения отчетов пользователя
-     operationId: getAll
-     parameters:
-       - name: username
-         in: path
-         required: true
-         schema:
-           type: string
-     responses:
-       200:
-         description: Success
-         content:
-           application/json:
-             schema:
-               type: array
-               items:
-                 $ref: 'model/get_report_response.json'
-       400:
-         description: Incorrect request format
-       403:
-         description: Permission denied
-       409:
-         description: Invalid items in request
-       429:
-         description: To many requests
-       500:
-         description: Internal server error
-
-tags:
- - name: Reports
-   description: "API для работы с Reports"
-
-{
- "$schema": "http://json-schema.org/draft-07/schema#",
- "type": "object",
- "description": "Метаданные файла",
- "properties": {
-   "imageId": {
-     "type": "integer",
-     "format": "int64",
-     "description": "Идентификатор снимка",
-     "example": "1234"
-   },
-   "imageName": {
-     "description": "Название снимка",
-     "type": "string",
-     "example": "img"
-   },
-   "imageExtension": {
-     "description": "Разрешение снимка",
-     "type": "string",
-     "example": ".pdf"
-   },
-   "size": {
-     "type": "integer",
-     "format": "int64",
-     "title": "Размер снимка",
-     "example": "123245"
-   },
-   "classCount": {
-     "type": "integer",
-     "format": "int64",
-     "description": "Количество кластеров",
-     "example": "1234"
-   },
-   "createdDate": {
-     "description": "Дата создания снимка",
-     "type": "string",
-     "format": "datetime",
-     "example": "2025.08.06:10:10:10.231312"
-   }
- },
- "required": [
-   "imageId",
-   "size",
-   "classCount",
-   "createdDate",
-   "fileExtension",
-   "fileName"
- ]
-}
-
-{
- "$schema": "http://json-schema.org/draft-07/schema#",
- "type": "object",
- "description": "Ответ на загрузку снимка пользователя в системе",
- "properties": {
-   "report": {
-     "description": "Отчет",
-     "$ref": "report.json"
-   }
- },
- "required": [
-   "report"
- ]
-}
-
-{
- "$schema": "http://json-schema.org/draft-07/schema#",
- "type": "object",
- "description": "Отчет об анализе",
- "properties": {
-   "reportId": {
-     "type": "integer",
-     "format": "int64",
-     "description": "Идентификатор отчета",
-     "example": "1234"
-   },
-   "imageId": {
-     "type": "integer",
-     "format": "int64",
-     "description": "Идентификатор снимка",
-     "example": "1234"
-   },
-   "reportParams": {
-     "description": "Параметры отчета",
-     "$ref": "report_params.json"
-   },
-   "fileMetadata" : {
-     "description": "data file",
-     "$ref" : "file_metadata.json"
-   }
- },
- "required": [
-   "reportId",
-   "imageID",
-   "reportParams",
-   "fileMetadata",
- ]
-}
-
-{
- "$schema": "http://json-schema.org/draft-07/schema#",
- "type": "object",
- "description": "Параметры отчета об анализе",
- "properties": {
-   "lastCheckTime": {
-     "type": "string",
-     "format": "datetime",
-     "description": "Время последней проверки",
-     "example": "2024-12-01:10:10:10.2312"
-   },
-   "createdDate": {
-     "description": "Дата создания снимка",
-     "type": "string",
-     "format": "datetime",
-     "example": "2025.08.06:10:10:10.231312"
-   },
-   "chancePercentage": {
-     "type": "number",
-     "description": "Процент вероятности",
-     "example": "70"
-   },
-   "checkTime": {
-     "description": "Время анализа",
-     "type": "string",
-     "example": "2:10:02"
-   }
- },
- "required": [
-   "lastCheckTime",
-   "createdDate",
-   "chancePercentage",
-   "checkTime"
- ]
-}
-     }
-
-openapi: 3.0.3
-
+  /process:
+    post:
+      summary: Обработать изображение
+      tags:
+        - image
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              properties:
+                image:
+                  type: string
+                  format: binary
+      responses:
+        '200':
+          description: Обработанное изображение
+          content:
+            image/png: {}
+  /resize:
+    post:
+      summary: Изменить размер изображения
+      tags:
+        - image
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              properties:
+                image:
+                  type: string
+                  format: binary
+                width:
+                  type: integer
+                height:
+                  type: integer
+      responses:
+        '200':
+          description: Измененное изображение
+          content:
+            image/png: {}
+  /enhance-contrast:
+    post:
+      summary: Повысить контраст изображения
+      tags:
+        - image
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              properties:
+                image:
+                  type: string
+                  format: binary
+      responses:
+        '200':
+          description: Изображение с улучшенным контрастом
+          content:
+            image/png: {}
+  /normalize:
+    post:
+      summary: Нормализовать изображение
+      tags:
+        - image
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              properties:
+                image:
+                  type: string
+                  format: binary
+      responses:
+        '200':
+          description: Нормализованное изображение
+          content:
+            image/png: {}
+components:
+  schemas:
+    ImageUpload:
+      type: object
+      properties:
+        image:
+          type: string
+          format: binary
+openapi: 3.0.2
 info:
- title: Requests for Service Users
- version: 1.0.0
- description: OpenApi Specification for Service Users
-
-servers:
- - url: /
-   description: Default Server URL
-
+  title: Neural Network Service API
+  description: API для управления нейросетевой моделью, включая обучение, предсказания и управление логами.
+  version: 1.0.0
 paths:
-
- /auth:
-   post:
-     tags:
-       - Auth
-     summary: Метод авторизации пользователя в системе
-     description: Метод авторизации пользователя в системе
-     operationId: auth
-     requestBody:
-       content:
-         application/json:
-           schema:
-             $ref: 'model/auth_request.json'
-     responses:
-       200:
-         description: Success
-         content:
-           application/json:
-             schema:
-               $ref: 'model/auth_response.json'
-       400:
-         description: Incorrect request format
-       404:
-         description: User not found
-       500:
-         description: Internal server error
-
- /create:
-   post:
-     tags:
-       - Users
-     summary: Метод создания пользователя в системе
-     description: Метод создания пользовтаеля в системе
-     operationId: create
-     requestBody:
-       content:
-         application/json:
-           schema:
-             $ref: 'model/create_user_request.json'
-       required: true
-     responses:
-       201:
-         description: Success
-         content:
-           application/json:
-             schema:
-               $ref: 'model/create_user_response.json'
-       400:
-         description: Incorrect request format
-       409:
-         description: Username or email already used
-       429:
-         description: To many requests
-       500:
-         description: Internal server error
-
- /update:
-   post:
-     tags:
-       - Users
-     summary: Метод обновления информации пользователя
-     description: Метод обновления информации пользователя
-     operationId: update
-     requestBody:
-       content:
-         application/json:
-           schema:
-             $ref: 'model/create_user_request.json'
-       required: true
-     responses:
-       200:
-         description: Success
-       400:
-         description: Incorrect request format
-       403:
-         description: Permission denied
-       409:
-         description: Invalid items in request
-       412:
-         description: Invalid loan status
-       429:
-         description: To many requests
-       500:
-         description: Internal server error
-
- /delete/{username}:
-   delete:
-     tags:
-       - Users
-     summary: Метод удаления пользователя из системы
-     description: Метод удаления пользователя из системы
-     operationId: delete
-     parameters:
-       - name: username
-         in: path
-         required: true
-         schema:
-           type: string
-     responses:
-       200:
-         description: Success
-       400:
-         description: Incorrect request format
-       412:
-         description: Invalid loan status
-       429:
-         description: To many requests
-       500:
-         description: Internal server error
-
- /info:
-   get:
-     tags:
-       - Users
-     summary: Метод получения информации пользователя
-     description: Метод получения информации пользователя
-     operationId: info
-     responses:
-       200:
-         description: Success
-         content:
-           application/json:
-             schema:
-               $ref: 'model/info_user_response.json'
-       400:
-         description: Incorrect request format
-       403:
-         description: Auth error
-       429:
-         description: To many requests
-       500:
-         description: Internal server error
-
- /find:
-   get:
-     tags:
-       - Users
-     summary: Метод поиска пользователя
-     description: Метод поиска пользователя
-     operationId: find
-     parameters:
-       - in: query
-         name: username
-         schema:
-           type: string
-           description: Имя пользователя в системе
-     responses:
-       200:
-         description: Success
-         content:
-           application/json:
-             schema:
-               $ref: 'model/find_user_response.json'
-       400:
-         description: Incorrect request format
-       429:
-         description: To many requests
-       500:
-         description: Internal server error
-
-tags:
- - name: Users
-   description: "API для работы с сервисом Users"
-
-{
- "$schema": "http://json-schema.org/draft-07/schema#",
- "type": "object",
- "description": "Запрос на авторизацию пользователя в системе",
- "properties": {
-   "username": {
-     "type": "string",
-     "title": "Имя пользователя",
-     "example": "angelina"
-   },
-   "password": {
-     "type": "string",
-     "description": "Пароль пользователя",
-     "example": "passwordD"
-   }
- },
- "required": [
-   "username",
-   "password"
- ]
-}
-
-{
- "$schema": "http://json-schema.org/draft-07/schema#",
- "type": "object",
- "description": "Ответ на авторизацию пользователя в системе",
- "properties": {
-   "token": {
-     "type": "string",
-     "title": "Токен авторизованного пользователя",
-     "example": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3ODkwIiwibmFtZSI6IkpvaG4gRG9lIiwiaWF0IjoxNTE2MjM5MDIyfQ.SflKxwRJSMeKKF2QT4fwpMeJf36POk6yJV_adQssw5c"
-   }
- },
- "required": [
-   "token"
- ]
-}
-
-{
- "$schema": "http://json-schema.org/draft-07/schema#",
- "type": "object",
- "description": "Запрос на создание пользователя в системе",
- "properties": {
-   "username": {
-     "type": "string",
-     "description": "Имя пользователя для входа",
-     "example": "angelina"
-   },
-   "password": {
-     "type": "string",
-     "description": "Пароль пользователя",
-     "example": "passwordD"
-   },
-   "firstName": {
-     "type": "string",
-     "description": "Имя пользователя",
-     "example": "Ангелина"
-   },
-   "surname": {
-     "type": "string",
-     "description": "Фамилия пользователя",
-     "example": "Круглова"
-   },
-   "middleName": {
-     "type": "string",
-     "description": "Отчество пользователя",
-     "example": "Александровна"
-   },
-   "organizationName": {
-     "type": "string",
-     "description": "Название организации",
-     "example": "Поликлиника "
-   },
-   "email": {
-     "type": "string",
-     "format": "email",
-     "description": "Электронная почта пользователя",
-     "example": "akruglova128@gmail.com"
-   },
-   "type": {
-     "type": "string",
-     "description": "Тип пользователя",
-     "enum": [
-       "PATIENT",
-       "DOCTOR",
-       "ADMIN"
-     ],
-     "default": "DOCTOR"
-   }
- },
- "required": [
-   "username",
-   "password",
-   "firstName",
-   "middleName",
-   "type",
-   "email"
- ]
-}
-
-{
- "$schema": "http://json-schema.org/draft-07/schema#",
- "type": "object",
- "description": "Ответ на запрос на создание пользователя в системе",
- "properties": {
-   "token": {
-     "description": "Токен пользователя",
-     "$ref": "auth_response.json"
-   }
- }
-}
-
-{
- "$schema": "http://json-schema.org/draft-07/schema#",
- "type": "object",
- "description": "Ответ на запрос по поиску пользователя",
- "properties": {
-   "user": {
-     "description": "Пользователь в системе",
-     "$ref": "info_user_response.json"
-   }
- }
-}
-
-{
- "$schema": "http://json-schema.org/draft-07/schema#",
- "type": "object",
- "description": "Ответ на получение информации о пользователе в системе",
- "properties": {
-   "username": {
-     "type": "string",
-     "description": "Имя пользователя для входа",
-     "example": "angelina"
-   },
-   "firstName": {
-     "type": "string",
-     "description": "Имя пользователя",
-     "example": "Ангелина"
-   },
-   "surname": {
-     "type": "string",
-     "description": "Фамилия пользователя",
-     "example": "Круглова"
-   },
-   "middleName": {
-     "type": "string",
-     "description": "Отчество пользователя",
-     "example": "Александровна"
-   },
-   "organizationName": {
-     "type": "string",
-     "description": "Название организации",
-     "example": "Поликлиника "
-   },
-   "email": {
-     "type": "string",
-     "format": "email",
-     "description": "Электронная почта пользователя",
-     "example": "akruglova128@gmail.com"
-   },
-   "type": {
-     "type": "string",
-     "description": "Тип пользователя",
-     "enum": [
-       "PATIENT",
-       "DOCTOR",
-       "ADMIN"
-     ],
-     "default": "DOCTOR"
-   }
- },
- "required": [
-   "username",
-   "firstName",
-   "middleName",
-   "type",
-   "email"
- ]
-}
+  /train:
+    post:
+      summary: Обучить модель
+      tags:
+        - Model
+      responses:
+        '200':
+          description: Модель успешно обучена
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MessageResponse'
+  /predict:
+    post:
+      summary: Сделать предсказание
+      tags:
+        - Model
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PredictionRequest'
+      responses:
+        '200':
+          description: Предсказание модели
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PredictionResponse'
+  /save-model:
+    post:
+      summary: Сохранить текущую модель
+      tags:
+        - Model
+      responses:
+        '200':
+          description: Модель успешно сохранена
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MessageResponse'
+  /load-model:
+    post:
+      summary: Загрузить сохранённую модель
+      tags:
+        - Model
+      responses:
+        '200':
+          description: Модель успешно загружена
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MessageResponse'
+  /logs:
+    get:
+      summary: Получить логи предсказаний
+      tags:
+        - Logs
+      responses:
+        '200':
+          description: История предсказаний
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/PredictionLog'
+  /data/load:
+    post:
+      summary: Загрузить данные из базы
+      tags:
+        - Data
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/DataLoadRequest'
+      responses:
+        '200':
+          description: Данные успешно загружены
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DataLoadResponse'
+components:
+  schemas:
+    MessageResponse:
+      type: object
+      properties:
+        message:
+          type: string
+          example: Operation completed successfully
+    PredictionRequest:
+      type: object
+      properties:
+        input_data:
+          type: array
+          items:
+            type: number
+          example:
+            - 0.1
+            - 0.5
+            - 0.8
+            - 0.3
+            - 0.9
+    PredictionResponse:
+      type: object
+      properties:
+        prediction:
+          type: array
+          items:
+            type: number
+          example:
+            - 0.76
+    PredictionLog:
+      type: object
+      properties:
+        id:
+          type: integer
+        input_data:
+          type: object
+        prediction:
+          type: object
+        created_at:
+          type: string
+          format: date-time
+      example:
+        id: 1
+        input_data:
+          values:
+            - 0.1
+            - 0.5
+            - 0.8
+        prediction:
+          result:
+            - 0.76
+        created_at: '2024-02-10T12:34:56Z'
+    DataLoadRequest:
+      type: object
+      properties:
+        query:
+          type: string
+          example: SELECT * FROM training_data
+    DataLoadResponse:
+      type: object
+      properties:
+        data:
+          type: array
+          items:
+            type: array
+            items:
+              type: number
+          example:
+            - - 0.1
+              - 0.2
+              - 0.3
+            - - 0.4
+              - 0.5
+              - 0.6
