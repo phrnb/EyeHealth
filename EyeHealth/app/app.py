@@ -1,70 +1,75 @@
-from flask import Flask, g
-
-from flask_login import LoginManager, user_loaded_from_header
-from user_api import user_api_blueprint
-from flask_swagger_ui import get_swaggerui_blueprint
-from flask.sessions import SecureCookieSessionInterface
-import models
+from flask import Flask, jsonify, request
+from analyticService import AnalyticService
+from apiGateway import ApiGateway
+from db import Database
+from imageProcessor import ImageProcessor
+from monitoringService import MonitoringService
+from neuralNetwork import NeuralNetwork
+from security_handlers import SecurityHandlers
+from userService import UserService
 
 app = Flask(__name__)
-login_manager = LoginManager(app)
-login_manager.init_app(app)
 
+# Инициализация сервисов
+analytic_service = AnalyticService()
+api_gateway = ApiGateway()
+db = Database()
+image_processor = ImageProcessor()
+monitoring_service = MonitoringService()
+neural_network = NeuralNetwork()
+security_handlers = SecurityHandlers()
+user_service = UserService()
 
-app.config.update(dict(
-    SECRET_KEY="powerful secretkey",
-    SQLALCHEMY_DATABASE_URI='mysql+mysqlconnector://root:test@user_db/user',
-))
+@app.route("/api/analyze", methods=["POST"])
+def analyze():
+    data = request.get_json()
+    result = analytic_service.analyze(data)
+    return jsonify(result)
 
-models.init_app(app)
-models.create_tables(app)
+@app.route("/api/upload-image", methods=["POST"])
+def upload_image():
+    file = request.files["image"]
+    result = image_processor.process(file)
+    return jsonify(result)
 
-app.register_blueprint(user_api_blueprint)
+@app.route("/api/login", methods=["POST"])
+def login():
+    credentials = request.get_json()
+    user = user_service.authenticate(credentials)
+    if user:
+        return jsonify({"message": "Login successful", "user": user}), 200
+    return jsonify({"message": "Invalid credentials"}), 401
 
-SWAGGER_URL = '/api/docs'
-API_URL = '/api/user/docs.json'
+@app.route("/api/monitoring", methods=["GET"])
+def get_monitoring_data():
+    data = monitoring_service.get_data()
+    return jsonify(data)
 
-swaggerui_blueprint = get_swaggerui_blueprint(
-    SWAGGER_URL,
-    API_URL,
-)
-app.register_blueprint(swaggerui_blueprint, url_prefix=SWAGGER_URL)
+@app.route("/api/neural-network", methods=["POST"])
+def neural_network_predict():
+    data = request.get_json()
+    prediction = neural_network.predict(data)
+    return jsonify({"prediction": prediction})
 
+@app.route("/api/security/check", methods=["GET"])
+def check_security():
+    status = security_handlers.check_security()
+    return jsonify({"security_status": status})
 
-@login_manager.user_loader
-def load_user(user_id):
-    return models.User.query.filter_by(id=user_id).first()
+@app.route("/api/gateway", methods=["GET"])
+def api_gateway_route():
+    data = api_gateway.handle_request()
+    return jsonify(data)
 
+@app.route("/api/users", methods=["GET"])
+def get_users():
+    users = user_service.get_users()
+    return jsonify(users)
 
-@login_manager.request_loader
-def load_user_from_request(request):
+@app.route("/api/database", methods=["GET"])
+def get_database_status():
+    status = db.get_status()
+    return jsonify({"db_status": status})
 
-    # try to login using Basic Auth
-    api_key = request.headers.get('Authorization')
-    if api_key:
-        api_key = api_key.replace('Basic ', '', 1)
-        user = models.User.query.filter_by(api_key=api_key).first()
-        if user:
-            return user
-
-    return None
-
-
-class CustomSessionInterface(SecureCookieSessionInterface):
-    """Prevent creating session from API requests."""
-    def save_session(self, *args, **kwargs):
-        if g.get('login_via_header'):
-            return
-        return super(CustomSessionInterface, self).save_session(*args, **kwargs)
-
-
-app.session_interface = CustomSessionInterface()
-
-
-@user_loaded_from_header.connect
-def user_loaded_from_header(self, user=None):
-    g.login_via_header = True
-
-
-if __name__ == '__main__':
-    app.run(debug=True, host='0.0.0.0')
+if __name__ == "__main__":
+    app.run(debug=True)
