@@ -389,3 +389,174 @@ components:
             - - 0.4
               - 0.5
               - 0.6
+openapi: 3.0.0
+info:
+  title: MonitoringService API
+  description: Сервис для сбора, обработки и анализа данных с обнаружением аномалий и предсказанием трендов.
+  version: 1.0.0
+paths:
+  /collect:
+    post:
+      summary: Сбор данных
+      description: Собирает новую точку данных с заданным названием метрики и значением.
+      operationId: collect_data
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                metric_name:
+                  type: string
+                  description: Название метрики, которое будет записано.
+                value:
+                  type: number
+                  format: float
+                  description: Значение метрики.
+              required:
+                - metric_name
+                - value
+      responses:
+        200:
+          description: Данные успешно собраны
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  id:
+                    type: integer
+                    description: ID новой точки данных
+                  metric_name:
+                    type: string
+                    description: Название собранной метрики
+                  value:
+                    type: number
+                    format: float
+                    description: Значение метрики
+                  timestamp:
+                    type: string
+                    format: date-time
+                    description: Временная метка, когда была собрана точка данных
+        400:
+          description: Неверные данные во вводе
+          
+  /analyze:
+    get:
+      summary: Анализ собранных данных
+      description: Анализирует собранные данные на наличие аномалий, трендов и предсказаний.
+      operationId: analyze_data
+      responses:
+        200:
+          description: Результаты анализа данных
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  anomalies:
+                    type: object
+                    description: Обнаруженные аномалии в данных
+                  predictions:
+                    type: array
+                    items:
+                      type: number
+                    description: Прогнозируемые значения трендов
+        500:
+          description: Внутренняя ошибка сервера
+          
+components:
+  schemas:
+    DataPoint:
+      type: object
+      properties:
+        id:
+          type: integer
+        metric_name:
+          type: string
+        value:
+          type: number
+          format: float
+        timestamp:
+          type: string
+          format: date-time
+openapi: 3.0.0
+info:
+  title: API Gateway
+  description: API шлюз с функциональностью аутентификации, авторизации, ограничения частоты, кэширования, защиты от CSRF и SQL инъекций, а также балансировки нагрузки.
+  version: 1.0.0
+paths:
+  /route/{endpoint}:
+    get:
+      summary: Маршрутизация запроса
+      description: Перенаправляет запрос на один из балансируемых сервисов.
+      operationId: route_request
+      parameters:
+        - name: endpoint
+          in: path
+          required: true
+          description: Имя конечной точки для маршрутизации запроса.
+          schema:
+            type: string
+      responses:
+        200:
+          description: Успешный редирект
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  redirect_to:
+                    type: string
+                    description: URL сервиса, на который будет перенаправлен запрос
+        401:
+          description: Ошибка аутентификации
+
+  /token/{user_id}:
+    get:
+      summary: Получить токен
+      description: Генерирует JWT токен для пользователя с заданным идентификатором.
+      operationId: get_token
+      parameters:
+        - name: user_id
+          in: path
+          required: true
+          description: Идентификатор пользователя, для которого будет сгенерирован токен.
+          schema:
+            type: string
+      responses:
+        200:
+          description: Успешно сгенерирован токен
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  token:
+                    type: string
+                    description: JWT токен пользователя
+        400:
+          description: Ошибка валидации идентификатора пользователя
+          
+components:
+  schemas:
+    Error:
+      type: object
+      properties:
+        detail:
+          type: string
+          description: Описание ошибки
+          
+    Token:
+      type: object
+      properties:
+        token:
+          type: string
+          description: Сгенерированный JWT токен
+          
+    Redirect:
+      type: object
+      properties:
+        redirect_to:
+          type: string
+          description: URL, на который будет направлен запрос
