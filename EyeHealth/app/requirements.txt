@@ -14,7 +14,6 @@ ItsDangerous==1.1.0
 Jinja2==2.10
 MarkupSafe==1.1.1
 more-itertools==4.3.0
-mysql-connector==2.2.9
 passlib==1.7.1
 pluggy==0.8.0
 py==1.7.0
