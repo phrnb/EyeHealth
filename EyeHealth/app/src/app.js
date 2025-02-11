@@ -1,82 +1,36 @@
-import React, { useState } from "react";
-import axios from "axios";
+import React from 'react';
+import { BrowserRouter as Router, Route, Switch } from 'react-router-dom';
+import AuthPage from './AuthPage';
+import ChartPage from './ChartPage';
+import EditProfile from './EditProfile';
+import ImgAnalysis from './ImgAnalysis';
+import PatientPage from './PatientPage';
+import PatientProfile from './PatientProfile';
+import RegisterPatient from './RegisterPatient';
+import UploadPage from './UploadPage';
+import UserProfile from './UserProfile';
+import UserRegister from './UserRegister';
 
-function App() {
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
-  const [message, setMessage] = useState("");
-  const [token, setToken] = useState("");
-
-  const handleRegister = async () => {
-    try {
-      const response = await axios.post("http://localhost:8000/register", {
-        email,
-        password,
-      });
-      setMessage(response.data.message);
-    } catch (error) {
-      console.error(error);
-      setMessage("Error during registration.");
-    }
-  };
-
-  const handleLogin = async () => {
-    try {
-      const response = await axios.post("http://localhost:8000/auth", {
-        email,
-        password,
-      });
-      setToken(response.data.token);
-      setMessage("Logged in successfully!");
-    } catch (error) {
-      console.error(error);
-      setMessage("Invalid credentials.");
-    }
-  };
-
+const App = () => {
   return (
-    <div>
-      <h1>FastAPI + React</h1>
-      <div>
-        <h2>Register</h2>
-        <input
-          type="email"
-          placeholder="Email"
-          value={email}
-          onChange={(e) => setEmail(e.target.value)}
-        />
-        <input
-          type="password"
-          placeholder="Password"
-          value={password}
-          onChange={(e) => setPassword(e.target.value)}
-        />
-        <button onClick={handleRegister}>Register</button>
-      </div>
-
-      <div>
-        <h2>Login</h2>
-        <input
-          type="email"
-          placeholder="Email"
-          value={email}
-          onChange={(e) => setEmail(e.target.value)}
-        />
-        <input
-          type="password"
-          placeholder="Password"
-          value={password}
-          onChange={(e) => setPassword(e.target.value)}
-        />
-        <button onClick={handleLogin}>Login</button>
-      </div>
-
-      <div>
-        <h3>{message}</h3>
-        {token && <p>Token: {token}</p>}
-      </div>
-    </div>
+    <Router>
+      <Switch>
+        <Route path="/auth" component={AuthPage} />
+        <Route path="/chart" component={ChartPage} />
+        <Route path="/edit-profile" component={EditProfile} />
+        <Route path="/img-analysis" component={ImgAnalysis} />
+        <Route path="/patient" component={PatientPage} />
+        <Route path="/patient-profile" component={PatientProfile} />
+        <Route path="/register-patient" component={RegisterPatient} />
+        <Route path="/upload" component={UploadPage} />
+        <Route path="/user-profile" component={UserProfile} />
+        <Route path="/user-register" component={UserRegister} />
+        
+        {/* Главная страница или редирект, если маршрут не найден */}
+        <Route exact path="/" render={() => <h1>Добро пожаловать на главную страницу!</h1>} />
+      </Switch>
+    </Router>
   );
-}
+};
 
 export default App;
