@@ -5,6 +5,8 @@
 ![image](https://github.com/user-attachments/assets/406455df-d3f6-4f9e-b5bc-b1e8b1a10cef)
 Логическая модель данных
 ![image](https://github.com/user-attachments/assets/dfd876fe-1f90-4984-806e-83e3a1c09070)
+Диаграмма User-flow
+![image](https://github.com/user-attachments/assets/623bb56e-19ee-4d4f-8e65-78c052363d44)
 Интерфейс
 ![image](https://github.com/user-attachments/assets/3b1c28f6-80ba-4f67-b50f-532ed6de67e5)
 ![image](https://github.com/user-attachments/assets/2b38e80b-9693-4b6a-b9db-a31f6deb1f6f)
