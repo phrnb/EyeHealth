@@ -13,5 +13,7 @@
 Юнит-тест для проверки методов обработки снимков
 Результат проведения Test1
 ![image](https://github.com/user-attachments/assets/2bd5739a-e3ad-447b-9ae4-9ee315f1501a)
+Результат проведения теста для enhance_contrast()
+![image](https://github.com/user-attachments/assets/b97b944f-1b21-4c37-afa6-1abf5903644f)
 
 
