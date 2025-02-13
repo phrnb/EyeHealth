@@ -1,12 +1,15 @@
-openapi: 3.0.2
+openapi: 3.0.0
 info:
   title: User Service API
-  description: Документация API для управления пользователями
   version: 1.0.0
+  description: API для управления пользователями, регистрации и аутентификации
+servers:
+  - url: http://localhost:8000
+    description: Локальный сервер
 paths:
   /register:
     post:
-      summary: Регистрация нового пользователя
+      summary: Регистрация пользователя
       tags:
         - auth
       requestBody:
@@ -16,8 +19,8 @@ paths:
             schema:
               $ref: '#/components/schemas/UserCreate'
       responses:
-        '200':
-          description: Пользователь зарегистрирован
+        "200":
+          description: Успешная регистрация
           content:
             application/json:
               schema:
@@ -25,6 +28,7 @@ paths:
                 properties:
                   message:
                     type: string
+                    example: "Пользователь зарегистрирован!"
   /auth:
     post:
       summary: Аутентификация пользователя
@@ -37,7 +41,7 @@ paths:
             schema:
               $ref: '#/components/schemas/AuthRequest'
       responses:
-        '200':
+        "200":
           description: Успешная аутентификация
           content:
             application/json:
@@ -46,461 +50,661 @@ paths:
                 properties:
                   token:
                     type: string
-        '401':
+        "401":
           description: Неверные учетные данные
   /users/me:
     get:
-      summary: Получить информацию о текущем пользователе
+      summary: Получение информации о текущем пользователе
       tags:
         - users
       security:
         - bearerAuth: []
       responses:
-        '200':
+        "200":
           description: Информация о пользователе
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/UserResponse'
 components:
-  schemas:
-    UserCreate:
-      type: object
-      properties:
-        name:
-          type: string
-        phone_number:
-          type: string
-        email:
-          type: string
-          format: email
-        role:
-          type: string
-          enum:
-            - Admin
-            - Doctor
-        password:
-          type: string
-          format: password
-      required:
-        - name
-        - phone_number
-        - email
-        - role
-        - password
-    UserResponse:
-      type: object
-      properties:
-        id:
-          type: integer
-        name:
-          type: string
-        phone_number:
-          type: string
-        email:
-          type: string
-          format: email
-        role:
-          type: string
-          enum:
-            - Admin
-            - Doctor
-    AuthRequest:
-      type: object
-      properties:
-        email:
-          type: string
-          format: email
-        password:
-          type: string
-          format: password
-      required:
-        - email
-        - password
   securitySchemes:
     bearerAuth:
       type: http
       scheme: bearer
       bearerFormat: JWT
-openapi: 3.0.2
+  schemas:
+    UserCreate:
+      type: object
+      required:
+        - name
+        - phone_number
+        - email
+        - password
+        - role
+      properties:
+        name:
+          type: string
+          example: "John Doe"
+        phone_number:
+          type: string
+          example: "+123456789"
+        email:
+          type: string
+          format: email
+          example: "user@example.com"
+        password:
+          type: string
+          example: "securepassword"
+        role:
+          type: string
+          enum: [Admin, Doctor]
+    AuthRequest:
+      type: object
+      required:
+        - email
+        - password
+      properties:
+        email:
+          type: string
+          format: email
+          example: "user@example.com"
+        password:
+          type: string
+          example: "securepassword"
+    UserResponse:
+      type: object
+      properties:
+        id:
+          type: integer
+          example: 1
+        name:
+          type: string
+          example: "John Doe"
+        phone_number:
+          type: string
+          example: "+123456789"
+        role:
+          type: string
+          enum: [Admin, Doctor]
+
+openapi: 3.0.0
 info:
-  title: Image Processor API
-  description: >-
-    API для обработки изображений: фильтрация, сегментация, нормализация и
-    улучшение качества
+  title: Image Processing API
+  description: API для обработки изображений с использованием различных техник
   version: 1.0.0
+servers:
+  - url: http://localhost:8000
+    description: Основной сервер
+
 paths:
-  /process:
+  /convert_format:
     post:
-      summary: Обработать изображение
-      tags:
-        - image
+      summary: Конвертировать изображение в нужный формат
+      description: Преобразует изображение в указанный формат.
+      operationId: convertFormat
+      parameters:
+        - in: query
+          name: format_type
+          required: true
+          schema:
+            type: string
+            description: Формат для конвертации
       requestBody:
-        required: true
         content:
-          multipart/form-data:
+          application/json:
             schema:
               type: object
               properties:
                 image:
                   type: string
                   format: binary
+                  description: Изображение для конвертации
       responses:
         '200':
-          description: Обработанное изображение
+          description: Изображение успешно конвертировано
           content:
-            image/png: {}
-  /resize:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  image:
+                    type: string
+                    format: binary
+                    description: Конвертированное изображение
+
+  /resize_image:
     post:
       summary: Изменить размер изображения
-      tags:
-        - image
+      description: Изменяет размер изображения на указанные ширину и высоту.
+      operationId: resizeImage
+      parameters:
+        - in: query
+          name: width
+          required: true
+          schema:
+            type: integer
+            description: Новая ширина изображения
+        - in: query
+          name: height
+          required: true
+          schema:
+            type: integer
+            description: Новая высота изображения
       requestBody:
-        required: true
         content:
-          multipart/form-data:
+          application/json:
             schema:
               type: object
               properties:
                 image:
                   type: string
                   format: binary
-                width:
-                  type: integer
-                height:
-                  type: integer
+                  description: Изображение для изменения размера
       responses:
         '200':
-          description: Измененное изображение
+          description: Изображение успешно изменено
           content:
-            image/png: {}
-  /enhance-contrast:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  image:
+                    type: string
+                    format: binary
+                    description: Изображение с новым размером
+
+  /apply_sobel:
     post:
-      summary: Повысить контраст изображения
-      tags:
-        - image
+      summary: Применить оператор Собеля
+      description: Применяет оператор Собеля для обнаружения границ.
+      operationId: applySobel
       requestBody:
-        required: true
         content:
-          multipart/form-data:
+          application/json:
             schema:
               type: object
               properties:
                 image:
                   type: string
                   format: binary
+                  description: Изображение для применения оператора Собеля
       responses:
         '200':
-          description: Изображение с улучшенным контрастом
+          description: Результат применения оператора Собеля
           content:
-            image/png: {}
-  /normalize:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  image:
+                    type: string
+                    format: binary
+                    description: Изображение после применения оператора Собеля
+
+  /remove_noise:
+    post:
+      summary: Удалить шум с изображения
+      description: Удаляет шум типа "соль и перец" с изображения.
+      operationId: removeNoise
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                image:
+                  type: string
+                  format: binary
+                  description: Изображение для удаления шума
+      responses:
+        '200':
+          description: Изображение без шума
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  image:
+                    type: string
+                    format: binary
+                    description: Изображение без шума
+
+  /extract_edges:
+    post:
+      summary: Извлечь края изображения
+      description: Применяет алгоритм для извлечения краев изображения.
+      operationId: extractEdges
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                image:
+                  type: string
+                  format: binary
+                  description: Изображение для извлечения краев
+      responses:
+        '200':
+          description: Края изображения
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  image:
+                    type: string
+                    format: binary
+                    description: Изображение с извлеченными краями
+
+  /segment_image:
+    post:
+      summary: Сегментировать изображение
+      description: Применяет пороговую бинаризацию для сегментации изображения.
+      operationId: segmentImage
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                image:
+                  type: string
+                  format: binary
+                  description: Изображение для сегментации
+      responses:
+        '200':
+          description: Сегментированное изображение
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  image:
+                    type: string
+                    format: binary
+                    description: Сегментированное изображение
+
+  /normalize_image:
     post:
       summary: Нормализовать изображение
-      tags:
-        - image
+      description: Нормализует изображение с использованием минимально-максимации.
+      operationId: normalizeImage
       requestBody:
-        required: true
         content:
-          multipart/form-data:
+          application/json:
             schema:
               type: object
               properties:
                 image:
                   type: string
                   format: binary
+                  description: Изображение для нормализации
       responses:
         '200':
           description: Нормализованное изображение
           content:
-            image/png: {}
-components:
-  schemas:
-    ImageUpload:
-      type: object
-      properties:
-        image:
-          type: string
-          format: binary
-openapi: 3.0.2
+            application/json:
+              schema:
+                type: object
+                properties:
+                  image:
+                    type: string
+                    format: binary
+                    description: Нормализованное изображение
+
+  /enhance_contrast:
+    post:
+      summary: Повысить контраст изображения
+      description: Применяет алгоритм повышения контраста с использованием CLAHE.
+      operationId: enhanceContrast
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                image:
+                  type: string
+                  format: binary
+                  description: Изображение для повышения контраста
+      responses:
+        '200':
+          description: Изображение с улучшенным контрастом
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  image:
+                    type: string
+                    format: binary
+                    description: Изображение с повышенным контрастом
+
+
+openapi: 3.0.0
 info:
   title: Neural Network Service API
-  description: API для управления нейросетевой моделью, включая обучение, предсказания и управление логами.
+  description: API для обучения модели нейронной сети и выполнения предсказаний.
   version: 1.0.0
+servers:
+  - url: http://localhost:8000
+    description: Основной сервер
+
 paths:
-  /train:
+  /train_model:
     post:
-      summary: Обучить модель
-      tags:
-        - Model
+      summary: Обучение модели нейронной сети
+      description: Запуск процесса обучения модели нейронной сети.
+      operationId: trainModel
       responses:
         '200':
           description: Модель успешно обучена
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/MessageResponse'
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: "Модель успешно обучена и сохранена."
+
   /predict:
     post:
-      summary: Сделать предсказание
-      tags:
-        - Model
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/PredictionRequest'
-      responses:
-        '200':
-          description: Предсказание модели
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/PredictionResponse'
-  /save-model:
-    post:
-      summary: Сохранить текущую модель
-      tags:
-        - Model
-      responses:
-        '200':
-          description: Модель успешно сохранена
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/MessageResponse'
-  /load-model:
-    post:
-      summary: Загрузить сохранённую модель
-      tags:
-        - Model
-      responses:
-        '200':
-          description: Модель успешно загружена
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/MessageResponse'
-  /logs:
-    get:
-      summary: Получить логи предсказаний
-      tags:
-        - Logs
-      responses:
-        '200':
-          description: История предсказаний
-          content:
-            application/json:
-              schema:
-                type: array
-                items:
-                  $ref: '#/components/schemas/PredictionLog'
-  /data/load:
-    post:
-      summary: Загрузить данные из базы
-      tags:
-        - Data
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/DataLoadRequest'
-      responses:
-        '200':
-          description: Данные успешно загружены
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/DataLoadResponse'
-components:
-  schemas:
-    MessageResponse:
-      type: object
-      properties:
-        message:
-          type: string
-          example: Operation completed successfully
-    PredictionRequest:
-      type: object
-      properties:
-        input_data:
-          type: array
-          items:
-            type: number
-          example:
-            - 0.1
-            - 0.5
-            - 0.8
-            - 0.3
-            - 0.9
-    PredictionResponse:
-      type: object
-      properties:
-        prediction:
-          type: array
-          items:
-            type: number
-          example:
-            - 0.76
-    PredictionLog:
-      type: object
-      properties:
-        id:
-          type: integer
-        input_data:
-          type: object
-        prediction:
-          type: object
-        created_at:
-          type: string
-          format: date-time
-      example:
-        id: 1
-        input_data:
-          values:
-            - 0.1
-            - 0.5
-            - 0.8
-        prediction:
-          result:
-            - 0.76
-        created_at: '2024-02-10T12:34:56Z'
-    DataLoadRequest:
-      type: object
-      properties:
-        query:
-          type: string
-          example: SELECT * FROM training_data
-    DataLoadResponse:
-      type: object
-      properties:
-        data:
-          type: array
-          items:
-            type: array
-            items:
-              type: number
-          example:
-            - - 0.1
-              - 0.2
-              - 0.3
-            - - 0.4
-              - 0.5
-              - 0.6
-openapi: 3.0.0
-info:
-  title: MonitoringService API
-  description: Сервис для сбора, обработки и анализа данных с обнаружением аномалий и предсказанием трендов.
-  version: 1.0.0
-paths:
-  /collect:
-    post:
-      summary: Сбор данных
-      description: Собирает новую точку данных с заданным названием метрики и значением.
-      operationId: collect_data
+      summary: Предсказание с использованием модели
+      description: Выполнение предсказания на основе обученной модели.
+      operationId: predict
       requestBody:
         content:
           application/json:
             schema:
               type: object
               properties:
-                metric_name:
-                  type: string
-                  description: Название метрики, которое будет записано.
-                value:
-                  type: number
-                  format: float
-                  description: Значение метрики.
-              required:
-                - metric_name
-                - value
-      responses:
-        200:
-          description: Данные успешно собраны
-          content:
-            application/json:
-              schema:
-                type: object
-                properties:
-                  id:
-                    type: integer
-                    description: ID новой точки данных
-                  metric_name:
-                    type: string
-                    description: Название собранной метрики
-                  value:
+                input_data:
+                  type: array
+                  items:
                     type: number
-                    format: float
-                    description: Значение метрики
-                  timestamp:
-                    type: string
-                    format: date-time
-                    description: Временная метка, когда была собрана точка данных
-        400:
-          description: Неверные данные во вводе
-          
-  /analyze:
-    get:
-      summary: Анализ собранных данных
-      description: Анализирует собранные данные на наличие аномалий, трендов и предсказаний.
-      operationId: analyze_data
+                  description: Входные данные для предсказания (например, 10 признаков)
       responses:
-        200:
-          description: Результаты анализа данных
+        '200':
+          description: Результат предсказания
           content:
             application/json:
               schema:
                 type: object
                 properties:
-                  anomalies:
-                    type: object
-                    description: Обнаруженные аномалии в данных
-                  predictions:
+                  prediction:
                     type: array
                     items:
                       type: number
-                    description: Прогнозируемые значения трендов
-        500:
-          description: Внутренняя ошибка сервера
-          
+                    description: Результат предсказания модели.
+                  message:
+                    type: string
+                    example: "Предсказание успешно выполнено и сохранено."
+
+  /log_prediction:
+    post:
+      summary: Логирование предсказания
+      description: Логирование предсказания в базе данных.
+      operationId: logPrediction
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                input_data:
+                  type: array
+                  items:
+                    type: number
+                  description: Входные данные для предсказания (например, 10 признаков)
+                prediction:
+                  type: array
+                  items:
+                    type: number
+                  description: Результат предсказания модели.
+      responses:
+        '200':
+          description: Предсказание успешно залогировано
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: "Предсказание успешно залогировано в базе данных."
+
+  /retrieve_logs:
+    get:
+      summary: Получение логов предсказаний
+      description: Загрузка всех логов предсказаний из базы данных.
+      operationId: retrieveLogs
+      responses:
+        '200':
+          description: Логи предсказаний
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  type: object
+                  properties:
+                    id:
+                      type: integer
+                      description: Идентификатор записи
+                    input_data:
+                      type: object
+                      description: Входные данные для предсказания
+                    prediction:
+                      type: object
+                      description: Результат предсказания
+                    created_at:
+                      type: string
+                      format: date-time
+                      description: Время создания записи
+
+  /save_model:
+    post:
+      summary: Сохранить модель
+      description: Сохранить текущую модель в файл.
+      operationId: saveModel
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                path:
+                  type: string
+                  description: Путь для сохранения модели.
+                  example: "model.h5"
+      responses:
+        '200':
+          description: Модель успешно сохранена
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: "Модель успешно сохранена."
+
+  /load_model:
+    post:
+      summary: Загрузить модель
+      description: Загрузить модель из файла.
+      operationId: loadModel
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                path:
+                  type: string
+                  description: Путь к файлу модели.
+                  example: "model.h5"
+      responses:
+        '200':
+          description: Модель успешно загружена
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: "Модель успешно загружена."
+
 components:
   schemas:
-    DataPoint:
+    Prediction:
       type: object
       properties:
-        id:
-          type: integer
-        metric_name:
-          type: string
-        value:
-          type: number
-          format: float
-        timestamp:
+        input_data:
+          type: object
+          description: Входные данные для модели
+        prediction:
+          type: object
+          description: Результат предсказания
+        created_at:
           type: string
           format: date-time
+          description: Время предсказания
+
+
+openapi: 3.0.0
+info:
+  title: Monitoring Service API
+  description: API для сбора системных метрик, обнаружения аномалий и отправки уведомлений.
+  version: 1.0.0
+servers:
+  - url: http://localhost:8000
+    description: Основной сервер
+
+paths:
+  /metrics:
+    get:
+      summary: Получить системные метрики
+      description: Возвращает текущие метрики системы, включая использование CPU, памяти и количество запросов.
+      operationId: getMetrics
+      responses:
+        '200':
+          description: Успешный ответ с метриками
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  cpu_usage:
+                    type: number
+                    description: Процент использования CPU.
+                    example: 75
+                  memory_usage:
+                    type: number
+                    description: Процент использования памяти.
+                    example: 85
+                  requests_count:
+                    type: integer
+                    description: Количество запросов, сохранённых в Redis.
+                    example: 120
+        '500':
+          description: Ошибка на сервере
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  detail:
+                    type: string
+                    description: Описание ошибки
+                    example: "Не удалось собрать метрики."
+
+  /report:
+    get:
+      summary: Получить отчет о логах
+      description: Возвращает список всех логов мониторинга, сохранённых в базе данных.
+      operationId: getReport
+      responses:
+        '200':
+          description: Успешный ответ с отчётом
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  report:
+                    type: array
+                    items:
+                      type: string
+                    description: Список сообщений логов мониторинга.
+                    example:
+                      - "2025-02-13 12:00:00: Высокая нагрузка на CPU: 85%"
+                      - "2025-02-13 12:10:00: Высокое использование памяти: 90%"
+        '500':
+          description: Ошибка на сервере
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  detail:
+                    type: string
+                    description: Описание ошибки
+                    example: "Не удалось получить отчёт из базы данных."
+
+components:
+  schemas:
+    Metric:
+      type: object
+      properties:
+        cpu_usage:
+          type: number
+          description: Процент использования CPU.
+        memory_usage:
+          type: number
+          description: Процент использования памяти.
+        requests_count:
+          type: integer
+          description: Количество запросов, сохранённых в Redis.
+      
+    Report:
+      type: object
+      properties:
+        report:
+          type: array
+          items:
+            type: string
+          description: Список сообщений логов мониторинга.
+
+
 openapi: 3.0.0
 info:
   title: API Gateway
-  description: API шлюз с функциональностью аутентификации, авторизации, ограничения частоты, кэширования, защиты от CSRF и SQL инъекций, а также балансировки нагрузки.
+  description: API для маршрутизации запросов с аутентификацией, ограничением частоты, кэшированием и защитой.
   version: 1.0.0
+servers:
+  - url: http://localhost:8000
+    description: Основной сервер
+
 paths:
   /route/{endpoint}:
     get:
       summary: Маршрутизация запроса
-      description: Перенаправляет запрос на один из балансируемых сервисов.
-      operationId: route_request
+      description: Перенаправляет запросы на один из доступных сервисов.
+      operationId: routeRequest
       parameters:
         - name: endpoint
           in: path
           required: true
-          description: Имя конечной точки для маршрутизации запроса.
+          description: Конечная точка для маршрутизации запроса.
           schema:
             type: string
       responses:
-        200:
-          description: Успешный редирект
+        '200':
+          description: Успешный ответ с информацией о маршруте
           content:
             application/json:
               schema:
@@ -508,25 +712,57 @@ paths:
                 properties:
                   redirect_to:
                     type: string
-                    description: URL сервиса, на который будет перенаправлен запрос
-        401:
+                    description: URL сервисов, на которые будет перенаправлен запрос.
+                    example: "http://service1.local/endpoint"
+        '400':
+          description: Ошибка при обработке запроса
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  detail:
+                    type: string
+                    description: Подробности ошибки
+                    example: "Invalid endpoint"
+        '401':
           description: Ошибка аутентификации
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  detail:
+                    type: string
+                    description: Подробности ошибки
+                    example: "Authorization required"
+        '429':
+          description: Превышен лимит запросов
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  detail:
+                    type: string
+                    description: Подробности ошибки
+                    example: "Too many requests"
 
   /token/{user_id}:
     get:
-      summary: Получить токен
-      description: Генерирует JWT токен для пользователя с заданным идентификатором.
-      operationId: get_token
+      summary: Получить токен аутентификации
+      description: Генерация токена для пользователя, который можно использовать для доступа к защищённым эндпоинтам.
+      operationId: getToken
       parameters:
         - name: user_id
           in: path
           required: true
-          description: Идентификатор пользователя, для которого будет сгенерирован токен.
+          description: Идентификатор пользователя для создания токена.
           schema:
             type: string
       responses:
-        200:
-          description: Успешно сгенерирован токен
+        '200':
+          description: Успешный ответ с токеном
           content:
             application/json:
               schema:
@@ -534,29 +770,37 @@ paths:
                 properties:
                   token:
                     type: string
-                    description: JWT токен пользователя
-        400:
-          description: Ошибка валидации идентификатора пользователя
-          
+                    description: JWT токен для аутентификации.
+                    example: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
+        '400':
+          description: Ошибка при создании токена
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  detail:
+                    type: string
+                    description: Подробности ошибки
+                    example: "User ID is required"
+        '401':
+          description: Ошибка аутентификации
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  detail:
+                    type: string
+                    description: Подробности ошибки
+                    example: "Invalid credentials"
+
 components:
-  schemas:
-    Error:
-      type: object
-      properties:
-        detail:
-          type: string
-          description: Описание ошибки
-          
-    Token:
-      type: object
-      properties:
-        token:
-          type: string
-          description: Сгенерированный JWT токен
-          
-    Redirect:
-      type: object
-      properties:
-        redirect_to:
-          type: string
-          description: URL, на который будет направлен запрос
+  securitySchemes:
+    BearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+  security:
+    - BearerAuth: []
+
