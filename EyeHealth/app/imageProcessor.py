@@ -1,5 +1,12 @@
 import cv2
 import numpy as np
+from fastapi import FastAPI, UploadFile, File, Query
+
+app = FastAPI(
+    title="Image Processing API",
+    description="API для обработки изображений с использованием различных техник",
+    version="1.0.0",
+)
 
 # ================= ImageConverter ==================
 class ImageConverter:
