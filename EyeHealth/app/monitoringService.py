@@ -85,20 +85,20 @@ class ReportGenerator:
 
 
 # ========== API ==========
-@app.get("/metrics")
+@app.get("/metrics", response_model=dict)
 def get_metrics():
-    metrics = MetricsCollector.collect()
-    LoggingService.log_event(f"Собраны метрики: {metrics}")
+    """Возвращает текущие метрики системы."""
+    try:
+        metrics = get_system_metrics()
+        return metrics
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Не удалось собрать метрики: {str(e)}")
 
-    alerts = AnomalyDetector.check_anomalies(metrics)
-    if alerts:
-        for alert in alerts:
-            AlertService.send_alert(alert)
-            LoggingService.log_event(alert)
-
-    return metrics
-
-
-@app.get("/report")
+@app.get("/report", response_model=dict)
 def get_report():
-    return {"report": ReportGenerator.generate_report()}
+    """Возвращает список логов мониторинга."""
+    try:
+        logs = redis_client.lrange("monitoring_logs", 0, -1) or []
+        return {"report": logs}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Не удалось получить отчёт: {str(e)}")
