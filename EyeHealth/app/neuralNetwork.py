@@ -3,6 +3,10 @@ from tensorflow import keras
 import numpy as np
 import psycopg2
 import json
+from fastapi import FastAPI, Depends, HTTPException
+
+app = FastAPI(title="Neural Network Service API", description="API для обучения модели нейронной сети и выполнения предсказаний.", version="1.0.0")
+
 
 
 # ================= DatabaseHandler (PostgreSQL) ==================
