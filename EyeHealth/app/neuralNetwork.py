@@ -214,3 +214,54 @@ if __name__ == "__main__":
     prediction = service.predict(test_input)
 
     print(f"Prediction: {prediction}")
+    @app.post("/train_model")
+def train_model():
+    global model
+    # Генерируем случайную модель (заглушка для обучения)
+    model = np.random.rand(10, 10)
+    with open(MODEL_PATH, "wb") as f:
+        pickle.dump(model, f)
+    return {"message": "Модель успешно обучена и сохранена."}
+
+@app.post("/predict")
+def predict(input_data: PredictionInput):
+    if model is None:
+        raise HTTPException(status_code=400, detail="Модель не загружена. Сначала обучите или загрузите её.")
+    
+    input_array = np.array(input_data.input_data)
+    prediction = input_array.dot(model.mean(axis=1))  # Пример вычисления
+    
+    return {"prediction": prediction.tolist(), "message": "Предсказание успешно выполнено."}
+
+@app.post("/log_prediction")
+def log_prediction(input_data: PredictionInput, prediction: List[float]):
+    log_entry = {
+        "id": len(logs) + 1,
+        "input_data": input_data.input_data,
+        "prediction": prediction,
+        "created_at": datetime.datetime.now().isoformat()
+    }
+    logs.append(log_entry)
+    return {"message": "Предсказание успешно залогировано в базе данных."}
+
+@app.get("/retrieve_logs", response_model=List[PredictionLog])
+def retrieve_logs():
+    return logs
+
+@app.post("/save_model")
+def save_model(model_path: ModelPath):
+    if model is None:
+        raise HTTPException(status_code=400, detail="Нет модели для сохранения.")
+    with open(model_path.path, "wb") as f:
+        pickle.dump(model, f)
+    return {"message": "Модель успешно сохранена."}
+
+@app.post("/load_model")
+def load_model(model_path: ModelPath):
+    global model
+    if not os.path.exists(model_path.path):
+        raise HTTPException(status_code=404, detail="Файл модели не найден.")
+    with open(model_path.path, "rb") as f:
+        model = pickle.load(f)
+    return {"message": "Модель успешно загружена."}
+
