@@ -186,32 +186,50 @@ fastapi_users = FastAPIUsers(
 
 
 # ================= Маршруты FastAPI =================
-@app.post("/register")
-async def register(user_data: UserCreate, db: Session = Depends(SessionLocal)):
+@app.post("/users/", response_model=UserResponse)
+def create_user(user: UserCreate, db: Session = Depends(get_db)):
     repo = UserRepository(db)
-    hashed_password = pwd_context.hash(user_data.password)
-    new_user = User(
-        name=user_data.name,
-        phone_number=user_data.phone_number,
-        email=user_data.email,
-        role=user_data.role,
-        password=hashed_password
-    )
-    repo.save(new_user)
-    return {"message": "Пользователь зарегистрирован!"}
+    return repo.create(user)
 
+@app.get("/users/{user_id}", response_model=UserResponse)
+def get_user(user_id: int, db: Session = Depends(get_db)):
+    user = db.query(User).filter(User.id == user_id).first()
+    if not user:
+        raise HTTPException(status_code=404, detail="User not found")
+    return user
 
-@app.post("/auth")
-async def auth(auth_request: AuthRequest, db: Session = Depends(SessionLocal)):
+@app.get("/users/", response_model=List[UserResponse])
+def get_users(db: Session = Depends(get_db)):
+    return db.query(User).all()
+
+@app.post("/auth/login")
+def login(auth_request: AuthRequest, db: Session = Depends(get_db)):
     repo = UserRepository(db)
     user = repo.find_by_email(auth_request.email)
     if not user or not pwd_context.verify(auth_request.password, user.password):
-        raise HTTPException(status_code=401, detail="Неверные учетные данные")
-
-    # Генерация токена вручную (если не использовать FastAPI Users для этого)
-    token = jwt.encode({"sub": user.email, "exp": datetime.datetime.utcnow() + datetime.timedelta(days=1)}, SECRET_KEY,
-                       algorithm="HS256")
+        raise HTTPException(status_code=401, detail="Invalid credentials")
+    token = jwt.encode({"sub": user.email}, SECRET_KEY, algorithm="HS256")
     return {"token": token}
+
+@app.put("/users/{user_id}", response_model=UserResponse)
+def update_user(user_id: int, user_data: UserCreate, db: Session = Depends(get_db)):
+    user = db.query(User).filter(User.id == user_id).first()
+    if not user:
+        raise HTTPException(status_code=404, detail="User not found")
+    for key, value in user_data.dict().items():
+        setattr(user, key, value)
+    db.commit()
+    db.refresh(user)
+    return user
+
+@app.delete("/users/{user_id}")
+def delete_user(user_id: int, db: Session = Depends(get_db)):
+    user = db.query(User).filter(User.id == user_id).first()
+    if not user:
+        raise HTTPException(status_code=404, detail="User not found")
+    db.delete(user)
+    db.commit()
+    return {"message": "User deleted successfully"}
 
 
 # Добавление маршрутов для FastAPI Users
