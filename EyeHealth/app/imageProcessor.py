@@ -163,3 +163,59 @@ if __name__ == "__main__":
     cv2.imshow("Processed Image", processed)
     cv2.waitKey(0)
     cv2.destroyAllWindows()
+    # ================= Endpoints ==================
+@app.post("/convert_format")
+def convert_format(image: UploadFile = File(...), format_type: str = Query(...)):
+    img = read_image(image)
+    print(f"Converting image to {format_type}")
+    return convert_image_to_response(img)
+
+@app.post("/resize_image")
+def resize_image(image: UploadFile = File(...), width: int = Query(...), height: int = Query(...)):
+    img = read_image(image)
+    resized = cv2.resize(img, (width, height))
+    return convert_image_to_response(resized)
+
+@app.post("/apply_sobel")
+def apply_sobel(image: UploadFile = File(...)):
+    img = read_image(image)
+    gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
+    grad_x = cv2.Sobel(gray, cv2.CV_64F, 1, 0, ksize=3)
+    grad_y = cv2.Sobel(gray, cv2.CV_64F, 0, 1, ksize=3)
+    sobel = cv2.magnitude(grad_x, grad_y)
+    return convert_image_to_response(sobel)
+
+@app.post("/remove_noise")
+def remove_noise(image: UploadFile = File(...)):
+    img = read_image(image)
+    denoised = cv2.medianBlur(img, 5)
+    return convert_image_to_response(denoised)
+
+@app.post("/extract_edges")
+def extract_edges(image: UploadFile = File(...)):
+    img = read_image(image)
+    edges = cv2.Canny(img, 100, 200)
+    return convert_image_to_response(edges)
+
+@app.post("/segment_image")
+def segment_image(image: UploadFile = File(...)):
+    img = read_image(image)
+    gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
+    _, segmented = cv2.threshold(gray, 128, 255, cv2.THRESH_BINARY)
+    return convert_image_to_response(segmented)
+
+@app.post("/normalize_image")
+def normalize_image(image: UploadFile = File(...)):
+    img = read_image(image)
+    normalized = cv2.normalize(img, None, 0, 255, cv2.NORM_MINMAX)
+    return convert_image_to_response(normalized)
+
+@app.post("/enhance_contrast")
+def enhance_contrast(image: UploadFile = File(...)):
+    img = read_image(image)
+    lab = cv2.cvtColor(img, cv2.COLOR_BGR2LAB)
+    l, a, b = cv2.split(lab)
+    clahe = cv2.createCLAHE(clipLimit=2.0, tileGridSize=(8, 8))
+    l = clahe.apply(l)
+    enhanced = cv2.merge((l, a, b))
+    return convert_image_to_response(cv2.cvtColor(enhanced, cv2.COLOR_LAB2BGR))
